@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавить заказ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+
+    <style>
+        .container {
+            margin-top: 30px;
+        }
+    </style>
+
+    <header th:replace="index :: head"></header>
+</head>
+<body>
+<div class="container">
+    <div style="text-align: center">
+        <h1>Добавление заказа для перевозки</h1>
+    </div>
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <form th:action="@{/save}" th:object="${cargo}" method="post">
+                <table class="form-table table table-bordered">
+                    <tr>
+                        <td><label for="departureDate">Дата отправки</label></td>
+                        <td><input type="date" th:field="*{departureDate}" class="form-control" id="departureDate" required></td>
+                    </tr>
+                    <tr>
+                        <td><label for="deliveryDate">Ожидаемое прибытие</label></td>
+                        <td><input type="date" th:field="*{deliveryDate}" class="form-control" id="deliveryDate" required></td>
+                    </tr>
+                    <tr>
+                        <td><label for="status">Статус перевозки</label></td>
+                        <td>
+                            <select th:field="*{status}" class="form-control" id="status" required>
+                                <option value="" disabled selected>Выберите статус</option>
+                                <option value="создан">Создан</option>
+                                <option value="в пути">В пути</option>
+                                <option value="задерживается">Задерживается</option>
+                                <option value="доставлен">Доставлен</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label for="cargoType">Тип груза</label></td>
+                        <td><input type="text" th:field="*{cargoType}" class="form-control" id="cargoType" required></td>
+                    </tr>
+                    <tr>
+                        <td><label for="weight">Вес</label></td>
+                        <td><input type="text" th:field="*{weight}" class="form-control" id="weight" required pattern="^\d+(\.\d+)?$" title="Введите число (например, 12.34)"></td>
+                    </tr>
+                    <tr>
+                        <td><label for="volume">Объем</label></td>
+                        <td><input type="text" th:field="*{volume}" class="form-control" id="volume" required pattern="^\d+(\.\d+)?$" title="Введите число (например, 12.34)"></td>
+                    </tr>
+                    <tr>
+                        <td><label for="sender">Отправитель</label></td>
+                        <td><input type="text" th:field="*{sender}" class="form-control" id="sender" required></td>
+                    </tr>
+                    <tr>
+                        <td><label for="recipientAddress">Адрес получателя</label></td>
+                        <td><input type="text" th:field="*{recipientAddress}" class="form-control" id="recipientAddress" required></td>
+                    </tr>
+                    <tr>
+                        <td><label for="deliveryRate">Тариф</label></td>
+                        <td>
+                            <select th:field="*{deliveryRate}" class="form-control" id="deliveryRate" required>
+                                <option value="" disabled selected>Выберите тариф</option>
+                                <option value="базовый">Базовый</option>
+                                <option value="ускоренный">Ускоренный</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" style="text-align: center;">
+                            <button type="submit" class="btn btn-primary">Сохранить</button>
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+    </div>
+    <div style="text-align: center">
+        <a href="/">
+            <button type="button" class="btn btn-info">На главную страницу</button>
+        </a>
+    </div>
+</div>
+</body>
+</html>

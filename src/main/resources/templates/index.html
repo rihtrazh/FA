@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Система управления грузоперевозками</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        h3 {
+            margin-top: 20px;
+            color: #343a40;
+        }
+        .table {
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            text-align: left;
+            word-wrap: break-word;
+        }
+        tr:hover {
+            background-color: #e9ecef;
+        }
+        .btn {
+            margin: 5px;
+        }
+        .author-info {
+            background-color: #343a40;
+            color: #ffffff;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: center;
+        }
+    </style>
+
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h3>Поиск груза по любому критерию:</h3>
+            <form th:action="@{/}">
+                <input type="text" name="keyword" id="keyword" class="form-control" placeholder="Введите ключевое слово" th:value="${keyword}" required/>
+                <div class="mt-2">
+                    <input type="submit" class="btn btn-success btn-sm" value="Поиск"/>
+                    <input type="button" class="btn btn-warning btn-sm" value="Очистить" id="btnClear" onclick="clearSearch()"/>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table id="cargoTable" class="table table-striped table-hover">
+            <thead>
+            <tr>
+                <th scope="col">ID груза</th>
+                <th scope="col">Дата отправки</th>
+                <th scope="col">Ожидаемое прибытие</th>
+                <th scope="col">Статус перевозки</th>
+                <th scope="col">Тип груза</th>
+                <th scope="col" class="sortable" onclick="sortTable(5)">Вес<span style="cursor:pointer;">(🔼🔽)</span></th>
+                <th scope="col">Объем</th>
+                <th scope="col">Отправитель</th>
+                <th scope="col">Адрес получателя</th>
+                <th scope="col">Тариф</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="cargo: ${cargoList}">
+                <td class="text-black" th:text="${cargo.ID}"></td>
+                <td class="text-black" th:text="${cargo.departureDate}"></td>
+                <td class="text-black" th:text="${cargo.deliveryDate}"></td>
+                <td class="text-black" th:text="${cargo.status}"></td>
+                <td class="text-black" th:text="${cargo.cargoType}"></td>
+                <td class="text-black" th:text="${cargo.weight} + ' кг'"></td>
+                <td class="text-black" th:text="${cargo.volume} + ' м³'"></td>
+                <td class="text-black" th:text="${cargo.sender}"></td>
+                <td class="text-black" th:text="${cargo.recipientAddress}"></td>
+                <td class="text-black" th:text="${cargo.deliveryRate}"></td>
+                <td>
+                    <a th:href="@{'/edit/'+${cargo.ID}}"><button type="button" class="btn btn-secondary btn-sm">Редактировать</button></a>
+                    <a th:href="@{'/delete/'+${cargo.ID}}"><button type="button" class="btn btn-danger btn-sm">Удалить</button></a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="orderCount" style="text-align: center;">
+        <h5>Всего заказов: <span id="count">0</span></h5>
+    </div>
+
+    <div style="text-align: center">
+        <a href="/new"><button type="button" class="btn btn-info">Добавить заказ</button></a>
+    </div>
+
+    <div class="col-12 col-md-8 mx-auto">
+        <canvas id="ordersChart"></canvas>
+    </div>
+</div>
+
+<div class="author-info">
+    <h5>Об авторе сайта</h5>
+    <p>Постников Владислав Дмитриевич, начинающий веб-разработчик</p>
+    <p>Email: <a href="mailto:222591@edu.fa.ru" class="text-white">222591@edu.fa.ru.</a></p>
+    <p>Все права защищены &copy; 2024</p>
+</div>
+
+<script type="text/javascript">
+    function clearSearch() {
+        window.location = "[[@{/}]]";
+    }
+
+    function sortTable(columnIndex) {
+        const table = document.getElementById("cargoTable");
+        const rows = Array.from(table.rows).slice(1);
+        const isAscending = table.getAttribute("data-sort-order") === "asc";
+
+        rows.sort((a, b) => {
+            const aText = a.cells[columnIndex].innerText.replace(' кг', '').trim();
+            const bText = b.cells[columnIndex].innerText.replace(' кг', '').trim();
+            const aWeight = parseFloat(aText);
+            const bWeight = parseFloat(bText);
+            return isAscending ? aWeight - bWeight : bWeight - aWeight;
+        });
+
+        rows.forEach(row => table.appendChild(row));
+        table.setAttribute("data-sort-order", isAscending ? "desc" : "asc");
+    }
+
+    function countOrders() {
+        const tableBody = document.querySelector("#cargoTable tbody");
+        const rowCount = tableBody.rows.length;
+        document.getElementById("count").innerText = rowCount;
+    }
+
+    function createHistogram() {
+        const tableBody = document.querySelector("#cargoTable tbody");
+        const rows = Array.from(tableBody.rows);
+
+        const monthlyCounts = Array(12).fill(0);
+
+        rows.forEach(row => {
+            const departureDate = row.cells[1].innerText;
+            const month = new Date(departureDate).getMonth();
+            monthlyCounts[month]++;
+        });
+
+        const ctx = document.getElementById('ordersChart').getContext('2d');
+        const ordersChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+                    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+                ],
+                datasets: [{
+                    label: 'Количество заказов',
+                    data: monthlyCounts,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Количество заказов'
+                        },
+                        ticks: {
+                            stepSize: 1,
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Месяцы'
+                        }
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                }
+            }
+        });
+    }
+
+    window.onload = function() {
+        countOrders();
+        createHistogram();
+    };
+
+</script>
+</body>
+</html>
